@@ -1,16 +1,17 @@
 
 const BASE = '/arcana-duel';
-const CACHE = 'arcana-core-v1';
+const CACHE = 'arcana-cache-v2';
 const ASSETS = [
   `${BASE}/`,
   `${BASE}/index.html`,
   `${BASE}/manifest.webmanifest`,
-  `${BASE}/sw.js`
+  `${BASE}/sw.js`,
+  `${BASE}/minor-cards-ja.json`,
+  `${BASE}/assets/icons/icon-192.png`,
+  `${BASE}/assets/icons/icon-512.png`
 ];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS))); });
-self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
-});
+self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))); });
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (url.origin === location.origin && url.pathname.startsWith(BASE)) {
