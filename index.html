@@ -1,163 +1,17 @@
-<!doctype html><html lang="ja"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>アルカナデュエル — 大＋小アルカナ（PWA v3）</title>
-<link rel="manifest" href="/arcana-duel/manifest.webmanifest"><meta name="theme-color" content="#070a18">
-<style>
-body{margin:0;background:radial-gradient(1200px 600px at 50% -10%, #162258, #070a18 60%);color:#f0f6ff;font-family:system-ui, -apple-system,'Segoe UI',Roboto,'Hiragino Kaku Gothic ProN','Yu Gothic',sans-serif}
-header{padding:14px 16px 10px;text-align:center;background:linear-gradient(180deg,#12206a,#0b1136 60%,rgba(0,0,0,0));position:sticky;top:0;z-index:5}
-h1{font-size:19px;margin:0;letter-spacing:.3px}
-.wrap{padding:10px;max-width:980px;margin:0 auto}
-.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.pill{padding:7px 12px;border-radius:999px;background:#12215a;border:1px solid #263a88;font-size:12px;color:#cfe0ff}
-.lane{display:flex;gap:12px;overflow:auto;padding:8px 2px 12px 2px;scroll-snap-type:x mandatory}
-.card{min-width:190px;background:linear-gradient(180deg,#10183f,#0d1230);border:1px solid #1e2b60;border-radius:16px;padding:10px;scroll-snap-align:start}
-.cardArt{height:220px;border-radius:12px;background:#091126;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
-.cardName{margin:10px 0 2px 0;font-weight:800;letter-spacing:.4px}
-.btn{background:linear-gradient(180deg,#4c6dff,#2b48ec);border:none;color:#f7fbff;padding:10px;border-radius:11px;width:100%;font-weight:800;letter-spacing:.3px}
-.tag{position:absolute;left:8px;top:8px;font-size:11px;background:#142264;color:#e6efff;border:1px solid #2f48a0;padding:2px 8px;border-radius:999px}
-.subtitle{font-size:12px;color:#a9b8ff;margin-bottom:6px}
-.log{background:linear-gradient(180deg,#0c1232,#0a0f26);border:1px solid #1b2a66;border-radius:14px;padding:12px;color:#cfd8ff;min-height:110px}
-</style></head><body>
-<header><h1>アルカナデュエル — 大＋小アルカナ（PWA v3）</h1>
-<div id="hud" style="color:#a9b8ff;margin-top:6px">あなた: <span id="ps">0</span>　AI: <span id="as">0</span>　ラウンド <span id="rd">1</span>/5</div>
-</header>
-<div class="wrap">
-  <div class="row">
-    <div class="pill">デッキ残り: <span id="dk">0</span></div>
-    <div class="pill">コイン: <span id="coins">0</span></div>
-    <button id="reset" class="pill">リセット</button>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arcana Duel</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <h1>Arcana Duel</h1>
+    <button id="drawButton">カードを引く</button>
+    <div id="cardDisplay"></div>
   </div>
-  <div style="margin:8px 2px;color:#a9b8ff">大アルカナ（1枚選んで「この大アルカナを出す」）</div>
-  <div id="laneMajor" class="lane"></div>
-  <div style="margin:8px 2px;color:#a9b8ff">小アルカナ（必要なら1枚添付）</div>
-  <div id="laneMinor" class="lane"></div>
-  <div style="margin:8px 2px;color:#a9b8ff">ログ</div>
-  <div id="log" class="log"></div>
-</div>
-<script>
-if('serviceWorker' in navigator){ addEventListener('load', ()=>navigator.serviceWorker.register('/arcana-duel/sw.js')); }
-
-// ====== 大アルカナ定義（22枚） ======
-const ARCANA=[
- ['FOOL','愚者','The Fool',5],['MAGICIAN','魔術師','The Magician',5],['HIGH_PRIESTESS','女教皇','The High Priestess',5],
- ['EMPRESS','女帝','The Empress',5],['EMPEROR','皇帝','The Emperor',5],['HIEROPHANT','法皇','The Hierophant',5],
- ['LOVERS','恋人','The Lovers',5],['CHARIOT','戦車','The Chariot',5],['STRENGTH','力','Strength',5],
- ['HERMIT','隠者','The Hermit',5],['WHEEL','運命の輪','Wheel of Fortune',5],['JUSTICE','正義','Justice',5],
- ['HANGED','吊るされた男','The Hanged Man',5],['DEATH','死神','Death',5],['TEMPERANCE','節制','Temperance',5],
- ['DEVIL','悪魔','The Devil',5],['TOWER','塔','The Tower',5],['STAR','星','The Star',5],
- ['MOON','月','The Moon',5],['SUN','太陽','The Sun',5],['JUDGEMENT','審判','Judgement',5],
- ['WORLD','世界','The World',15]
-];
-const MAJORS=ARCANA.map((a,i)=>({type:'major',key:a[0],jp:a[1],name:a[2],value:a[3],hue:(190+i*9)%360,uid:a[0]+'-'+Math.random()}));
-const SUITS=['WANDS','CUPS','SWORDS','PENTACLES'];
-const RANKS=['A','2','3','4','5','6','7','8','9','10','PAGE','KNIGHT','QUEEN','KING'];
-
-function rankBoost(r){ if(r==='PAGE')return 2; if(r==='KNIGHT')return 3; if(r==='QUEEN')return 3; if(r==='KING')return 4;
-  const n=parseInt(r,10); if(n>=1&&n<=3)return 1; if(n>=4&&n<=6)return 2; if(n>=7&&n<=10)return 3; return 0; }
-function makeMinorDeck(){ const out=[]; SUITS.forEach((s,si)=>{ RANKS.forEach(r=> out.push({type:'minor',suit:s,rank:r,hue:(40+si*80)%360,uid:`${s}-${r}-${Math.random()}`})); }); return out; }
-
-let deck=[],pMaj=[],pMin=[],aiMaj=[],aiMin=[],pScore=0,aScore=0,round=1,coins=0;
-const dk=document.getElementById('dk'), ps=document.getElementById('ps'), as=document.getElementById('as'), rd=document.getElementById('rd'), coinsEl=document.getElementById('coins');
-const laneMajor=document.getElementById('laneMajor'), laneMinor=document.getElementById('laneMinor'), logEl=document.getElementById('log');
-
-function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
-function drawTo(arr,n){ for(let i=0;i<n&&deck.length;i++) arr.push(deck.shift()); }
-function updateHUD(){ dk.textContent=deck.length; ps.textContent=pScore; as.textContent=aScore; rd.textContent=round; coinsEl.textContent=coins; }
-function log(s){ logEl.innerHTML='・'+s+'<br>'+logEl.innerHTML; }
-
-function bg(uid,h){ return `<defs><linearGradient id="g${uid}" x1="0" x2="1"><stop offset="0%" stop-color="hsl(${h},86%,64%)"/><stop offset="100%" stop-color="hsl(${(h+18)%360},72%,46%)"/></linearGradient></defs><rect x="0" y="0" width="100" height="150" fill="url(#g${uid})" opacity=".22"/>`; }
-function SV(s){ return `<svg viewBox="0 0 100 150" xmlns="http://www.w3.org/2000/svg">${s}</svg>`; }
-const ART_MAJOR={
-  FOOL:(u,h)=>SV(bg(u,h)+`<g stroke="hsl(${h},92%,90%)" fill="none" stroke-width="2"><path d="M20 100 l60 -44"/><circle cx="36" cy="112" r="6"/><path d="M64 58 l22 -8"/></g>`),
-  DEATH:(u,h)=>SV(bg(u,h)+`<g stroke="hsl(${h},92%,90%)" fill="none" stroke-width="2"><path d="M24 120 q26 -44 52 -84"/><circle cx="70" cy="40" r="8"/><path d="M66 40 h8"/></g>`),
-  WORLD:(u,h)=>SV(bg(u,h)+`<g stroke="hsl(${h},92%,90%)" fill="none" stroke-width="2" transform="translate(50,74)"><ellipse rx="30" ry="44"/><path d="M-20,-34 q-8,14 0,28"/><path d="M20,-34 q8,14 0,28"/><path d="M-20,6 q-8,14 0,28"/><path d="M20,6 q8,14 0,28"/></g><g stroke="hsl(${h},92%,90%)" fill="none" stroke-width="2"><circle cx="50" cy="58" r="6"/><path d="M50 64 q-12 18 0 36 q12 -18 0 -36"/><path d="M44 104 q6 8 12 0"/></g>`)
-};
-function majorArt(c){ const fn=ART_MAJOR[c.key]; return fn?fn(c.uid,c.hue):SV(bg(c.uid,c.hue)); }
-function minorArt(c){ const h=c.hue, s=c.suit, r=c.rank, u=c.uid; let sym='';
-  if(s==='WANDS') sym='<path d="M20 120 L80 30"/>';
-  if(s==='CUPS') sym='<path d="M30 70 q20 -18 40 0 v12 h-40 z"/>';
-  if(s==='SWORDS') sym='<path d="M50 28 v80 M42 92 h16"/>';
-  if(s==='PENTACLES') sym='<circle cx="50" cy="76" r="12"/><path d="M50 64 l4 10 h10 l-8 6 l4 10 l-10 -6 l-10 6 l4 -10 l-8 -6 h10 z"/>';
-  return `<svg viewBox="0 0 100 150" xmlns="http://www.w3.org/2000/svg">
-  <defs><linearGradient id="m${u}" x1="0" x2="1"><stop offset="0%" stop-color="hsl(${h},90%,40%)"/><stop offset="100%" stop-color="hsl(${(h+26)%360},80%,36%)"/></linearGradient></defs>
-  <rect x="0" y="0" width="100" height="150" fill="url(#m${u})" opacity=".22"/>${sym}</svg>`;
-}
-
-let selectedMajor=null;
-function makeCardElMajor(c){
-  const w=document.createElement('div'); w.className='card';
-  const a=document.createElement('div'); a.className='cardArt'; a.innerHTML=majorArt(c);
-  const tag=document.createElement('div'); tag.className='tag'; tag.textContent=`${c.jp} / ${c.name}（+${c.value}）`; a.appendChild(tag);
-  const name=document.createElement('div'); name.className='cardName'; name.textContent=c.jp;
-  const sub=document.createElement('div'); sub.className='subtitle'; sub.textContent=`+${c.value} 点`;
-  const btn=document.createElement('button'); btn.className='btn'; btn.textContent='この大アルカナを出す';
-  btn.onclick=()=>{ selectedMajor=c.uid; renderLanes(); };
-  w.append(a,name,sub,btn);
-  if(selectedMajor===c.uid){ w.style.outline='2px solid #4c6dff'; }
-  return w;
-}
-function makeCardElMinor(c){
-  const w=document.createElement('div'); w.className='card';
-  const a=document.createElement('div'); a.className='cardArt'; a.innerHTML=minorArt(c);
-  const tag=document.createElement('div'); tag.className='tag'; tag.textContent=`${c.suit}/${c.rank}`; a.appendChild(tag);
-  const name=document.createElement('div'); name.className='cardName'; name.textContent=`${c.suit} ${c.rank}`;
-  const sub=document.createElement('div'); sub.className='subtitle'; sub.textContent='添付 1 枚まで';
-  const btn=document.createElement('button'); btn.className='btn'; btn.textContent='この小アルカナを添える';
-  btn.onclick=()=>{ playTurn(selectedMajor, c.uid); };
-  w.append(a,name,sub,btn);
-  return w;
-}
-
-function renderLanes(){
-  laneMajor.innerHTML=''; pMaj.forEach(c=> laneMajor.appendChild(makeCardElMajor(c)));
-  laneMinor.innerHTML='';
-  const skip=document.createElement('button'); skip.className='pill'; skip.textContent='（添付しないで出す）'; skip.onclick=()=>playTurn(selectedMajor,null);
-  laneMinor.appendChild(skip);
-  pMin.forEach(c=> laneMinor.appendChild(makeCardElMinor(c)));
-}
-
-function aiChoose(){
-  aiMaj.sort((a,b)=>b.value-a.value);
-  const major=aiMaj.shift();
-  let minor=null;
-  if(aiMin.length){
-    aiMin.sort((a,b)=>rankBoost(b.rank)-rankBoost(a.rank));
-    minor=aiMin.shift();
-  }
-  return {major,minor};
-}
-
-function playTurn(mu, nu){
-  if(!mu){ alert('先に大アルカナを選んでください'); return; }
-  const i=pMaj.findIndex(c=>c.uid===mu); if(i<0){ alert('その大アルカナは手札にありません'); return; }
-  const M=pMaj.splice(i,1)[0];
-  let N=null; if(nu){ const j=pMin.findIndex(c=>c.uid===nu); if(j>=0) N=pMin.splice(j,1)[0]; }
-  const A=aiChoose();
-  let pr=M.value, ar=A.major.value;
-  if(N){ const b=rankBoost(N.rank);
-    if(N.suit==='WANDS') pr+=b;
-    else if(N.suit==='CUPS'){ pr+=b; ar=Math.max(0, ar-Math.max(0,b-1)); }
-    else if(N.suit==='SWORDS'){ ar=Math.max(0, ar-b); }
-    else if(N.suit==='PENTACLES'){ pr+=1; coins+=1; }
-    log(`あなた：${M.jp}（+${M.value}）＋ 小：${N.suit}/${N.rank}（B=${b}） → 合計 +${pr}`);
-  }else{
-    log(`あなた：${M.jp}（+${M.value}） → 合計 +${pr}`);
-  }
-  log(`AI：${A.major.jp}（+${A.major.value}）` + (A.minor?` ＋ 小：${A.minor.suit}/${A.minor.rank}`:''));
-  pScore += pr; aScore += ar;
-  round++; selectedMajor=null;
-  drawTo(pMaj,1); drawTo(aiMaj,1); drawTo(pMin,1); drawTo(aiMin,1);
-  updateHUD(); renderLanes();
-}
-
-function resetGame(){
-  deck=[...MAJORS.map(c=>({...c, uid:c.key+'-'+Math.random()})), ...MAJORS.map(c=>({...c, uid:c.key+'b-'+Math.random()})), ...makeMinorDeck()];
-  shuffle(deck);
-  pMaj=[]; aiMaj=[]; pMin=[]; aiMin=[]; pScore=0; aScore=0; round=1; coins=0; selectedMajor=null;
-  drawTo(pMaj,3); drawTo(aiMaj,3); drawTo(pMin,3); drawTo(aiMin,3);
-  updateHUD(); logEl.innerHTML=''; renderLanes();
-}
-document.getElementById('reset').onclick=()=>resetGame();
-resetGame();
-</script>
-</body></html>
+  <script src="script.js"></script>
+</body>
+</html>
