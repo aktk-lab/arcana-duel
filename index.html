@@ -3,15 +3,106 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Arcana Duel</title>
-  <link rel="stylesheet" href="style.css">
+  <title>タロット占い</title>
+  <style>
+    body {
+      font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", sans-serif;
+      text-align: center;
+      padding: 20px;
+      background: #f9f5ec;
+      color: #333;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    button {
+      background: #6b4e71;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 10px 0;
+    }
+    button:hover {
+      background: #543a57;
+    }
+    .card {
+      margin: 20px auto;
+      padding: 15px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      max-width: 400px;
+      background: #fff;
+      box-shadow: 2px 2px 6px rgba(0,0,0,0.1);
+    }
+    .card h2 {
+      font-size: 20px;
+      margin-bottom: 10px;
+    }
+    .card p {
+      font-size: 14px;
+      line-height: 1.6;
+    }
+  </style>
 </head>
 <body>
-  <div class="app">
-    <h1>Arcana Duel</h1>
-    <button id="drawButton">カードを引く</button>
-    <div id="cardDisplay"></div>
-  </div>
-  <script src="script.js"></script>
+  <h1>✨ タロット占い ✨</h1>
+  <button onclick="drawCard()">カードを引く</button>
+  <div id="result"></div>
+
+  <script>
+    // 大アルカナ22枚
+    const arcanaMajor = [
+      { name: "愚者", meaning: "自由・可能性・純粋な始まり" },
+      { name: "魔術師", meaning: "創造・意志・可能性の実現" },
+      { name: "女教皇", meaning: "知恵・直感・内なる声" },
+      { name: "女帝", meaning: "豊かさ・母性・愛情" },
+      { name: "皇帝", meaning: "秩序・権威・安定" },
+      { name: "法王", meaning: "伝統・導き・信念" },
+      { name: "恋人", meaning: "選択・調和・愛" },
+      { name: "戦車", meaning: "勝利・意志力・前進" },
+      { name: "力", meaning: "勇気・優しさ・精神力" },
+      { name: "隠者", meaning: "探求・内省・真理" },
+      { name: "運命の輪", meaning: "変化・転機・チャンス" },
+      { name: "正義", meaning: "公平・均衡・因果" },
+      { name: "吊るされた男", meaning: "忍耐・手放し・逆転の発想" },
+      { name: "死神", meaning: "終わり・再生・変容" },
+      { name: "節制", meaning: "調和・バランス・癒し" },
+      { name: "悪魔", meaning: "欲望・束縛・誘惑" },
+      { name: "塔", meaning: "崩壊・衝撃・解放" },
+      { name: "星", meaning: "希望・ひらめき・癒し" },
+      { name: "月", meaning: "不安・幻影・直感" },
+      { name: "太陽", meaning: "成功・幸福・活力" },
+      { name: "審判", meaning: "復活・許し・新しい段階" },
+      { name: "世界", meaning: "完成・達成・統合" }
+    ];
+
+    // 小アルカナ（簡易的に一部のみ）
+    const arcanaMinor = [
+      { name: "ワンドのエース", meaning: "情熱の始まり・可能性" },
+      { name: "カップのエース", meaning: "愛の芽生え・感情の豊かさ" },
+      { name: "ソードのエース", meaning: "決断・知恵・新しい考え" },
+      { name: "ペンタクルのエース", meaning: "物質的豊かさ・繁栄" }
+    ];
+
+    // 全カード結合
+    const allCards = [...arcanaMajor, ...arcanaMinor];
+
+    function drawCard() {
+      const card = allCards[Math.floor(Math.random() * allCards.length)];
+      const reversed = Math.random() < 0.5; // 50%で逆位置
+      const resultDiv = document.getElementById("result");
+
+      resultDiv.innerHTML = `
+        <div class="card">
+          <h2>${card.name} ${reversed ? "(逆位置)" : "(正位置)"}</h2>
+          <p>${reversed ? "⚠️ 意味の反転・課題や警告を示します。" : "🌟 ポジティブなエネルギーを示します。"}<br><br>
+          【解釈】${card.meaning}</p>
+        </div>
+      `;
+    }
+  </script>
 </body>
 </html>
