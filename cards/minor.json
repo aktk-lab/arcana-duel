@@ -1,6 +1,12 @@
 [
-  { "name": "ワンドのエース", "description": "情熱、新しい始まり" },
-  { "name": "カップのエース", "description": "愛、感情、直感" },
-  { "name": "ソードのエース", "description": "知性、真実、決断" },
-  { "name": "ペンタクルのエース", "description": "物質的成功、安定" }
+  { "id": "wands-ace",       "suit": "ワンド",      "rank": "エース", "name": "ワンドのエース",      "meaning": "情熱の始まり、創造" },
+  { "id": "wands-2",         "suit": "ワンド",      "rank": "2",     "name": "ワンドの2",           "meaning": "展望、計画" },
+  { "id": "wands-3",         "suit": "ワンド",      "rank": "3",     "name": "ワンドの3",           "meaning": "発展、成功の兆し" },
+
+  { "id": "cups-ace",        "suit": "カップ",      "rank": "エース","name": "カップのエース",      "meaning": "感情の始まり、愛" },
+  { "id": "cups-2",          "suit": "カップ",      "rank": "2",     "name": "カップの2",           "meaning": "調和、関係性" },
+
+  { "id": "swords-ace",      "suit": "ソード",      "rank": "エース","name": "ソードのエース",      "meaning": "知恵、決断" },
+
+  { "id": "pentacles-ace",   "suit": "ペンタクル",  "rank": "エース","name": "ペンタクルのエース",  "meaning": "物質的豊かさの始まり" }
 ]
